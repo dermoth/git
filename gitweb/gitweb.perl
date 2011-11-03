@@ -756,6 +756,8 @@ our @cgi_param_mapping = (
 	searchtext => "s",
 	searchtype => "st",
 	snapshot_format => "sf",
+	snapshot_name => "sn",
+	snapshot_prefix => "sp",
 	extra_options => "opt",
 	search_use_regexp => "sr",
 	ctag => "by_tag",
@@ -6684,11 +6686,19 @@ sub git_snapshot {
 	}
 
 	my ($name, $prefix) = snapshot_name($project, $hash);
+	if (defined($input_params{'snapshot_name'})) {
+		$name = $input_params{'snapshot_name'};
+	}
+	if (defined($input_params{'snapshot_prefix'})) {
+		$prefix = $input_params{'snapshot_prefix'};
+	} else {
+		$prefix .= '/';
+	}
 	my $filename = "$name$known_snapshot_formats{$format}{'suffix'}";
 	my $cmd = quote_command(
 		git_cmd(), 'archive',
 		"--format=$known_snapshot_formats{$format}{'format'}",
-		"--prefix=$prefix/", $hash);
+		"--prefix=$prefix", $hash);
 	if (exists $known_snapshot_formats{$format}{'compressor'}) {
 		$cmd .= ' | ' . quote_command(@{$known_snapshot_formats{$format}{'compressor'}});
 	}
