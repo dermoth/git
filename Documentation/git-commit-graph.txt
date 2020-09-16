@@ -70,7 +70,8 @@ data.
 With the `--max-new-filters=<n>` option, generate at most `n` new Bloom
 filters (if `--changed-paths` is specified). If `n` is `-1`, no limit is
 enforced. Commits whose filters are not calculated are stored as a
-length zero Bloom filter.
+length zero Bloom filter. Overrides the `commitGraph.maxNewFilters`
+configuration.
 +
 With the `--split[=<strategy>]` option, write the commit-graph as a
 chain of multiple commit-graph files stored in
