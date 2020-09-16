@@ -967,6 +967,7 @@ struct write_commit_graph_context {
 
 	int count_bloom_filter_computed;
 	int count_bloom_filter_not_computed;
+	int count_bloom_filter_trunc_small;
 	int count_bloom_filter_trunc_large;
 };
 
@@ -1395,6 +1396,8 @@ static void trace2_bloom_filter_write_statistics(struct write_commit_graph_conte
 			   ctx->count_bloom_filter_computed);
 	trace2_data_intmax("commit-graph", ctx->r, "filter-not-computed",
 			   ctx->count_bloom_filter_not_computed);
+	trace2_data_intmax("commit-graph", ctx->r, "filter-trunc-small",
+			   ctx->count_bloom_filter_trunc_small);
 	trace2_data_intmax("commit-graph", ctx->r, "filter-trunc-large",
 			   ctx->count_bloom_filter_trunc_large);
 }
@@ -1431,6 +1434,8 @@ static void compute_bloom_filters(struct write_commit_graph_context *ctx)
 			&computed);
 		if (computed & BLOOM_COMPUTED) {
 			ctx->count_bloom_filter_computed++;
+			if (computed & BLOOM_TRUNC_SMALL)
+				ctx->count_bloom_filter_trunc_small++;
 			if (computed & BLOOM_TRUNC_LARGE)
 				ctx->count_bloom_filter_trunc_large++;
 		} else if (computed & BLOOM_NOT_COMPUTED)
