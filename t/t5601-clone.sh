@@ -631,6 +631,16 @@ test_expect_success CASE_INSENSITIVE_FS 'colliding file detection' '
 	test_i18ngrep "the following paths have collided" icasefs/warning
 '
 
+test_expect_success 'clone with GIT_DEFAULT_HASH' '
+	(
+		sane_unset GIT_DEFAULT_HASH &&
+		git init test
+	) &&
+	test_commit -C test foo &&
+	git clone test test-clone &&
+	git -C test-clone status
+'
+
 partial_clone_server () {
 	       SERVER="$1" &&
 
