@@ -9,7 +9,7 @@
 # License: GPL v2 or later
 
 # Gateway between Git and MediaWiki.
-# Documentation & bugtracker: https://github.com/moy/Git-Mediawiki/
+# Documentation & bugtracker: https://github.com/Git-Mediawiki/Git-Mediawiki
 
 use strict;
 use MediaWiki::API;
@@ -807,7 +807,10 @@ sub get_more_refs {
 sub mw_import {
 	# multiple import commands can follow each other.
 	my @refs = (shift, get_more_refs('import'));
+	my $processedRefs;
 	foreach my $ref (@refs) {
+		next if $processedRefs->{$ref}; # skip duplicates: "import refs/heads/master" being issued twice; TODO: why?
+		$processedRefs->{$ref} = 1;
 		mw_import_ref($ref);
 	}
 	print {*STDOUT} "done\n";

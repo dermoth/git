@@ -14,11 +14,11 @@ install the following packages (Debian/Ubuntu names, may need to be
 adapted for another distribution):
 
 * lighttpd
-* php5
-* php5-cgi
-* php5-cli
-* php5-curl
-* php5-sqlite
+* php7.3
+* php7.3-cgi
+* php7.3-cli
+* php7.3-curl
+* php7.3-sqlite
 
 Principles and Technical Choices
 --------------------------------
