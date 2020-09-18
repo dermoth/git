@@ -41,6 +41,33 @@ static int read_directory_contents(const char *path, struct string_list *list)
  */
 static const char file_from_standard_input[] = "-";
 
+/* Check that file is - (STDIN) or unnamed pipe - explicitly
+ * avoid on-disk named pipes which could block
+ */
+static int ispipe(const char *name)
+{
+	struct stat st;
+
+	if (name == file_from_standard_input)
+		return 1;  /* STDIN */
+
+	if (!lstat(name, &st)) {
+		if (S_ISLNK(st.st_mode)) {
+			/* symlink - read it and check it doesn't exists
+			 * as a file yet link to a pipe */
+			struct strbuf sb = STRBUF_INIT;
+			strbuf_realpath(&sb, name, 0);
+			/* We're abusing strbuf_realpath here, it may append
+			 * pipe:[NNNNNNNNN] to an abs path */
+			if (!stat(sb.buf, &st))
+				return 0; /* link target exists , not pipe */
+			if (!stat(name, &st))
+				return S_ISFIFO(st.st_mode);
+		}
+	}
+	return 0;
+}
+
 static int get_mode(const char *path, int *mode)
 {
 	struct stat st;
@@ -51,7 +78,7 @@ static int get_mode(const char *path, int *mode)
 	else if (!strcasecmp(path, "nul"))
 		*mode = 0;
 #endif
-	else if (path == file_from_standard_input)
+	else if (ispipe(path))
 		*mode = create_ce_mode(0666);
 	else if (lstat(path, &st))
 		return error("Could not access '%s'", path);
@@ -60,13 +87,13 @@ static int get_mode(const char *path, int *mode)
 	return 0;
 }
 
-static int populate_from_stdin(struct diff_filespec *s)
+static int populate_from_fd(struct diff_filespec *s, int fd)
 {
 	struct strbuf buf = STRBUF_INIT;
 	size_t size = 0;
 
-	if (strbuf_read(&buf, 0, 0) < 0)
-		return error_errno("error while reading from stdin");
+	if (strbuf_read(&buf, fd, 0) < 0)
+		return error_errno(_("error while reading from fd %i"), fd);
 
 	s->should_munmap = 0;
 	s->data = strbuf_detach(&buf, &size);
@@ -74,6 +101,20 @@ static int populate_from_stdin(struct diff_filespec *s)
 	s->should_free = 1;
 	s->is_stdin = 1;
 	return 0;
+}
+
+static int populate_from_pipe(struct diff_filespec *s, const char *name)
+{
+	int ret;
+	FILE *f;
+
+	f = fopen(name, "r");
+	if (!f)
+		return error_errno(_("cannot open %s"), name);
+
+	ret = populate_from_fd(s, fileno(f));
+	fclose(f);
+	return ret;
 }
 
 static struct diff_filespec *noindex_filespec(const char *name, int mode)
@@ -85,7 +126,9 @@ static struct diff_filespec *noindex_filespec(const char *name, int mode)
 	s = alloc_filespec(name);
 	fill_filespec(s, &null_oid, 0, mode);
 	if (name == file_from_standard_input)
-		populate_from_stdin(s);
+		populate_from_fd(s, 0);
+	else if (ispipe(name))
+		populate_from_pipe(s, name);
 	return s;
 }
 
@@ -218,8 +261,7 @@ static void fixup_paths(const char **path, struct strbuf *replacement)
 {
 	unsigned int isdir0, isdir1;
 
-	if (path[0] == file_from_standard_input ||
-	    path[1] == file_from_standard_input)
+	if (ispipe(path[0]) || ispipe(path[1]))
 		return;
 	isdir0 = is_directory(path[0]);
 	isdir1 = is_directory(path[1]);
