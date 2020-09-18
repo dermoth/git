@@ -258,11 +258,11 @@ test_expect_success 'changed commit with --stat diff option' '
 	     a => b | 0
 	     1 file changed, 0 insertions(+), 0 deletions(-)
 	3:  $(test_oid t3) ! 3:  $(test_oid c3) s/11/B/
-	     a => b | 0
-	     1 file changed, 0 insertions(+), 0 deletions(-)
+	     a => b | 2 +-
+	     1 file changed, 1 insertion(+), 1 deletion(-)
 	4:  $(test_oid t4) ! 4:  $(test_oid c4) s/12/B/
-	     a => b | 0
-	     1 file changed, 0 insertions(+), 0 deletions(-)
+	     a => b | 2 +-
+	     1 file changed, 1 insertion(+), 1 deletion(-)
 	EOF
 	test_cmp expect actual
 '

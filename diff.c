@@ -3681,7 +3681,10 @@ static void builtin_diffstat(const char *name_a, const char *name_b,
 		return;
 	}
 
-	same_contents = oideq(&one->oid, &two->oid);
+	if (one->is_stdin && two->is_stdin)
+		same_contents = !strcmp(one->data, two->data);
+	else
+		same_contents = oideq(&one->oid, &two->oid);
 
 	if (diff_filespec_is_binary(o->repo, one) ||
 	    diff_filespec_is_binary(o->repo, two)) {
